@@ -19,7 +19,7 @@ export default class DOMElementsCreator {
 
   static createImageElement(file, name) {
     const imageElement = document.createElement('img');
-    imageElement.classList.add('post-image');
+    imageElement.classList.add('image');
     imageElement.classList.add('media');
     imageElement.src = file;
     imageElement.textContent = name;
@@ -30,7 +30,7 @@ export default class DOMElementsCreator {
 
   static createVideoElement(file, name) {
     const videoElement = document.createElement('video');
-    videoElement.classList.add('post-video');
+    videoElement.classList.add('video');
     videoElement.classList.add('media');
     videoElement.src = file;
     videoElement.controls = 'controls';
@@ -42,7 +42,7 @@ export default class DOMElementsCreator {
 
   static createAudioElement(file, name) {
     const audioElement = document.createElement('audio');
-    audioElement.classList.add('post-audio');
+    // audioElement.classList.add('post-audio');
     audioElement.classList.add('media');
     audioElement.src = file;
     audioElement.controls = 'controls';

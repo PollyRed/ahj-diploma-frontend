@@ -7,12 +7,31 @@ export default class DOMController {
     this.addFileButton = document.querySelector('.chaos-control__create-post-add');
     this.dragArea = document.querySelector('.drag__area');
     this.dragEventListener = this.dragEventListener.bind(this);
+    this.lastLoadedPostId = null;
+    this.isStartLoad = true;
+    this.latitude = null;
+    this.longitude = null;
 
-    this.ws = new WebSocket('ws://ahj22-diploma-backend.herokuapp.com');
+    this.ws = new WebSocket('ws://ahj22-diploma-backend.herokuapp.com'); // 'ws://localhost:7070');
   }
 
   init() {
     this.addListeners();
+    this.geo();
+  }
+
+  geo() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.latitude = position.coords.latitude.toFixed(4);
+          this.longitude = position.coords.longitude.toFixed(4);
+        },
+        (error) => {
+          console.log(`определить позицию не удалось. Ошибка: ${error}`);
+        },
+      );
+    }
   }
 
   addListeners() {
@@ -20,13 +39,19 @@ export default class DOMController {
     this.addFileAddButtonListener();
     this.addDragoverEventListener();
     this.addDropEventListener();
+    this.addScrollEventListener();
+
     this.addWSOpenEventListener();
     this.addWSMessageEventListener();
   }
 
+  addScrollEventListener() {
+    this.chaosContent.addEventListener('scroll', this.scrollEventListener.bind(this));
+  }
+
   addWSOpenEventListener() {
     this.ws.addEventListener('open', () => {
-      this.askForAllPosts();
+      this.getAllPosts();
     });
   }
 
@@ -53,6 +78,10 @@ export default class DOMController {
     link.click();
   }
 
+  scrollEventListener() {
+    this.getAdditionalPosts();
+  }
+
   dragEventListener(event) {
     const { type } = event;
     event.preventDefault();
@@ -75,7 +104,7 @@ export default class DOMController {
 
       const file = event.dataTransfer.files[0];
       this.addFileElement(file);
-      this.sendFile(file);
+      this.sendFilePost(file);
     }
   }
 
@@ -88,7 +117,7 @@ export default class DOMController {
 
         const file = target.files.item(0);
         this.addFileElement(file);
-        this.sendFile(file);
+        this.sendFilePost(file);
       });
     });
   }
@@ -108,19 +137,6 @@ export default class DOMController {
 
     this.chaosContent.append(fileElement);
     this.chaosContent.scrollTop = this.chaosContent.scrollHeight;
-  }
-
-  sendTextPost(message, dateString) {
-    this.ws.send(JSON.stringify(
-      {
-        event: 'addPost',
-        post: {
-          type: 'text',
-          dateString,
-          message,
-        },
-      },
-    ));
   }
 
   addSendButtonListener() {
@@ -156,34 +172,72 @@ export default class DOMController {
     });
   }
 
-  askForAllPosts() {
+  sendTextPost(message, dateString) {
+    this.ws.send(JSON.stringify(
+      {
+        event: 'addPost',
+        post: {
+          type: 'text',
+          dateString,
+          message,
+        },
+      },
+    ));
+  }
+
+  getAllPosts() {
     const request = JSON.stringify(
-      { event: 'getAllPosts' },
+      {
+        event: 'getAllPosts',
+        count: 10,
+        lastId: this.lastLoadedPostId,
+      },
     );
 
     this.ws.send(request);
   }
 
-  restoreAllPosts(data) {
-    const initialPosts = JSON.parse(data).allPosts;
+  getAdditionalPosts() {
+    const lastPost = this.chaosContent.firstChild;
+    const relativeTop = lastPost.getBoundingClientRect().top;
 
-    for (const initialPost of initialPosts) {
+    if (relativeTop >= 0) {
+      this.getAllPosts();
+    }
+  }
+
+  restoreAllPosts(data) {
+    const response = JSON.parse(data);
+    const initialPosts = response.allPosts;
+
+    if (response.event.match('botResponse')) {
+      this.chaosContent.append(DOMElementsCreator.createPostElement(initialPosts[0]));
+      this.chaosContent.scrollTop = this.chaosContent.scrollHeight;
+      return;
+    }
+
+    this.lastLoadedPostId = initialPosts[0].id;
+    for (const initialPost of initialPosts.reverse()) {
       try {
         const postElement = DOMElementsCreator.createPostElement(initialPost);
-        this.chaosContent.append(postElement);
+        this.chaosContent.prepend(postElement);
+
+        const downloadButton = postElement.querySelector('.download-file');
+        if (downloadButton !== null) {
+          downloadButton.addEventListener('click', DOMController.downloadEventListener);
+        }
       } catch (exception) {
-        console.log(exception);
+        // skip post
       }
     }
 
-    const downloadButtons = Array.from(document.querySelectorAll('.download-file'));
-    for (const downloadButton of downloadButtons) {
-      downloadButton.addEventListener('click', DOMController.downloadEventListener);
+    if (this.isStartLoad) {
+      this.isStartLoad = false;
+      this.chaosContent.scrollTop = this.chaosContent.scrollHeight;
     }
-    this.chaosContent.scrollTop = this.chaosContent.scrollHeight;
   }
 
-  sendFile(file) {
+  sendFilePost(file) {
     if (!file) return;
     let fileFormated = null;
     const fileType = file.type;
