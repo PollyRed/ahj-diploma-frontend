@@ -13,7 +13,7 @@ export default class DOMController {
     this.isOnlineMode = true;
     this.geolocation = null;
 
-    this.ws = new WebSocket('ws://ahj22-diploma-backend.herokuapp.com'); // 'ws://localhost:7070');
+    this.ws = new WebSocket('wss://ahj22-diploma-backend.herokuapp.com'); // 'ws://localhost:7070');
   }
 
   init() {
