@@ -5,44 +5,32 @@ export default class DOMController {
     this.chaosContent = document.querySelector('.chaos-content');
     this.fileInput = document.querySelector('.file-input');
     this.addFileButton = document.querySelector('.chaos-control__create-post-add');
+    this.addGeolocationButton = document.querySelector('.chaos-control__create-post-geo');
     this.dragArea = document.querySelector('.drag__area');
     this.dragEventListener = this.dragEventListener.bind(this);
     this.lastLoadedPostId = null;
     this.isStartLoad = true;
-    this.latitude = null;
-    this.longitude = null;
+    this.isOnlineMode = true;
+    this.geolocation = null;
 
     this.ws = new WebSocket('ws://ahj22-diploma-backend.herokuapp.com'); // 'ws://localhost:7070');
   }
 
   init() {
     this.addListeners();
-    this.geo();
-  }
-
-  geo() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          this.latitude = position.coords.latitude.toFixed(4);
-          this.longitude = position.coords.longitude.toFixed(4);
-        },
-        (error) => {
-          console.log(`определить позицию не удалось. Ошибка: ${error}`);
-        },
-      );
-    }
   }
 
   addListeners() {
     this.addSendButtonListener();
     this.addFileAddButtonListener();
+    this.addGeolocationButtonListener();
     this.addDragoverEventListener();
     this.addDropEventListener();
     this.addScrollEventListener();
 
     this.addWSOpenEventListener();
     this.addWSMessageEventListener();
+    this.addWSErrorEventListener();
   }
 
   addScrollEventListener() {
@@ -58,6 +46,12 @@ export default class DOMController {
   addWSMessageEventListener() {
     this.ws.addEventListener('message', (event) => {
       this.restoreAllPosts(event.data);
+    });
+  }
+
+  addWSErrorEventListener() {
+    this.ws.addEventListener('error', () => {
+      this.isOnlineMode = false;
     });
   }
 
@@ -120,6 +114,29 @@ export default class DOMController {
         this.sendFilePost(file);
       });
     });
+  }
+
+  geolocationButtonListener(event) {
+    event.preventDefault();
+    const textArea = document.querySelector('.chaos-control__create-post-text');
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.geolocation = `Latitude: ${position.coords.latitude.toFixed(4)}, Longitude: ${position.coords.longitude.toFixed(4)}`; 
+          textArea.value += this.geolocation;
+        },
+        (error) => {
+          alert(`Невозможно определить местоположение! Причина: ${error.message}`);
+        },
+      );
+    } else {
+      alert('Невозможно определить местоположение!');
+    }
+  }
+
+  addGeolocationButtonListener() {
+    this.addGeolocationButton.addEventListener('click', this.geolocationButtonListener.bind(this));
   }
 
   addFileElement(file) {

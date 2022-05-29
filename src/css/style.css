@@ -104,6 +104,15 @@ body {
 	background-color: white;
 }
 
+.chaos-control__create-post-geo {
+	background-size: 23px 23px;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-image: url('../img/icons8-geo.png');
+	right: 115px;
+	background-color: white;
+}
+
 .chaos-control__create-post-emoji {
 	background-size: 23px 23px;
 	background-repeat: no-repeat;
