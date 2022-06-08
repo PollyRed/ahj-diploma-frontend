@@ -1,4 +1,5 @@
 import DOMElementsCreator from './DOMElementsCreator';
+import Emoji from './Emoji';
 
 export default class DOMController {
   constructor() {
@@ -6,12 +7,17 @@ export default class DOMController {
     this.fileInput = document.querySelector('.file-input');
     this.addFileButton = document.querySelector('.chaos-control__create-post-add');
     this.addGeolocationButton = document.querySelector('.chaos-control__create-post-geo');
+    this.addEmojiButton = document.querySelector('.chaos-control__create-post-emoji');
     this.dragArea = document.querySelector('.drag__area');
     this.dragEventListener = this.dragEventListener.bind(this);
     this.lastLoadedPostId = null;
     this.isStartLoad = true;
     this.isOnlineMode = true;
     this.geolocation = null;
+    // this.emoji = new Emoji(this.chaosContent);
+    // this.emoji.showList = this.emoji.showList.bind(this);
+    // this.emoji.close = this.emoji.close.bind(this);
+    // this.emoji.addEmoji = this.emoji.addEmoji.bind(this);
 
     this.ws = new WebSocket('wss://ahj22-diploma-backend.herokuapp.com'); // 'ws://localhost:7070');
   }
@@ -24,6 +30,7 @@ export default class DOMController {
     this.addSendButtonListener();
     this.addFileAddButtonListener();
     this.addGeolocationButtonListener();
+    this.addEmojiButtonListener();
     this.addDragoverEventListener();
     this.addDropEventListener();
     this.addScrollEventListener();
@@ -137,6 +144,14 @@ export default class DOMController {
 
   addGeolocationButtonListener() {
     this.addGeolocationButton.addEventListener('click', this.geolocationButtonListener.bind(this));
+  }
+
+  addEmojiButtonListener() {
+    this.addEmojiButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      const emoji = new Emoji();
+      emoji.showList();
+    });
   }
 
   addFileElement(file) {
